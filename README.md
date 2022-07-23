@@ -4,18 +4,31 @@
 
 ### Support Links
 
-```
-How to set types for functional component props in Nextjs with TypeScript?
-https://melvingeorge.me/blog/set-types-for-functional-components-props-typescript-nextjs
-```
+> **How to set types for functional component props in Nextjs with TypeScript?**
+>
+> https://melvingeorge.me/blog/set-types-for-functional-components-props-typescript-nextjs
 
 ### Project Structure
 
+```sh
+.
+├── components
+│   ├── Header
+│   └── Layout
+├── pages
+│   ├── _app.tsx
+│   ├── 404.tsx
+│   ├── about.tsx
+│   └── index.tsx
+├── posts
+│   └── all markdown files
+├── public
+└── styles
 ```
 
-```
+---
 
-##
+## Start Project
 
 ### Setup
 
@@ -205,3 +218,185 @@ const NotFoundPage = () => {
 
 export default NotFoundPage;
 ```
+
+---
+
+## Fetch, Parse, & Display Markdown
+
+### getStaticProps function
+
+- #### index.tsx
+
+```tsx
+import { GetStaticProps } from "next";
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const files = fs.readdirSync(path.join("posts"));
+  console.log(files);
+
+  return {
+    props: {},
+  };
+};
+```
+
+```sh
+[
+  'django-crash-course.md',
+  'javascript-performance-tips.md',
+  'manage-react-state-with-xstate.md',
+  'new-in-php-8.md',
+  'python-book-review.md',
+  'react-crash-course.md',
+  'tailwind-vs-bootstrap.md',
+  'writing-great-unit-tests.md'
+]
+```
+
+- create slug
+
+```tsx
+// const files = fs.readdirSync(path.join("posts"));
+const posts = files.map((filename) => {
+  const slug = filename.replace(".md", "");
+  return { slug };
+});
+console.log(posts);
+```
+
+```sh
+[
+  { slug: 'django-crash-course' },
+  { slug: 'javascript-performance-tips' },
+  { slug: 'manage-react-state-with-xstate' },
+  { slug: 'new-in-php-8' },
+  { slug: 'python-book-review' },
+  { slug: 'react-crash-course' },
+  { slug: 'tailwind-vs-bootstrap' },
+  { slug: 'writing-great-unit-tests' }
+]
+```
+
+- markdownWithMeta
+
+```tsx
+// const slug = filename.replace(".md", "");
+const markdownWithMeta = fs.readFileSync(path.join("posts", filename), "utf-8");
+console.log(markdownWithMeta);
+```
+
+```sh
+---
+title: 'React Crash Course'
+date: 'May 8, 2021'
+excerpt: 'Crash course to learn the React JavaScript library. We will look at components, hooks and more'
+cover_image: '/images/posts/img5.jpg'
+category: 'JavaScript'
+author: 'Jane Doe'
+author_image: 'https://randomuser.me/api/portraits/women/11.jpg'
+---
+
+<!-- Markdown generator - https://jaspervdj.be/lorem-markdownum/ -->
+
+Lorem markdownum fine incustoditam unda factura versum occuluere Aeneas, iuvat
+haec praepes [partes epulae](http://cui.com/), in egisse de. Caecisque ter
+manus. Munere in exhalat, ferre sed [habe quaeque saepe](http://ne.org/fretum)
+verba caput ferarum _nubila_? Patriam Cyparisse tamen, **saxum** fide postponere
+pavida ne omnes etiam, atque. Sonuit omina sed sine haerebat illic fit a mora
+in.
+
+1. Serrae enim Etruscam aquis
+2. Et premis et flumine frontem minatur oppressos
+3. Inquam rector Icarus possum vim tumulo propiusque
+4. Vulnus se Latreus
+5. Aptumque bis
+...
+```
+
+- import matter from "gray-matter"
+
+```tsx
+import matter from "gray-matter";
+
+// const files = fs.readdirSync(path.join("posts"));
+const posts = files.map((filename) => {
+  const slug = filename.replace(".md", "");
+  const markdownWithMeta = fs.readFileSync(
+    path.join("posts", filename),
+    "utf-8"
+  );
+  const { data: frontmatter } = matter(markdownWithMeta);
+  return { slug, frontmatter };
+});
+console.log(posts);
+```
+
+```sh
+{
+    slug: 'react-crash-course',
+    frontmatter: {
+      title: 'React Crash Course',
+      date: 'May 8, 2021',
+      excerpt: 'Crash course to learn the React JavaScript library. We will look at components, hooks and more',
+      cover_image: '/images/posts/img5.jpg',
+      category: 'JavaScript',
+      author: 'Jane Doe',
+      author_image: 'https://randomuser.me/api/portraits/women/11.jpg'
+    }
+  },
+```
+
+- #### Complete Code
+
+```tsx
+export const getStaticProps: GetStaticProps = async (context) => {
+  const files = fs.readdirSync(path.join("posts"));
+  const posts = files.map((filename) => {
+    const slug = filename.replace(".md", "");
+    const markdownWithMeta = fs.readFileSync(
+      path.join("posts", filename),
+      "utf-8"
+    );
+    const { data: frontmatter } = matter(markdownWithMeta);
+    return { slug, frontmatter };
+  });
+
+  return {
+    props: {
+      posts,
+    },
+  };
+};
+```
+
+```tsx
+const HomePage: NextPage<HomePageProps> = ({ posts }) => {
+  console.log(posts);
+
+  return (
+    <Layout>
+      <h1>Hello NextTS</h1>
+    </Layout>
+  );
+};
+```
+
+- client console log
+
+```sh
+frontmatter:
+author: "Jane Doe"
+author_image: "https://randomuser.me/api/portraits/women/11.jpg"
+category: "JavaScript"
+cover_image: "/images/posts/img5.jpg"
+date: "May 8, 2021"
+excerpt: "Crash course to learn the React JavaScript library. We will look at components, hooks and more"
+title: "React Crash Course"
+[[Prototype]]: Object
+slug: "react-crash-course"
+[[Prototype]]: Object
+```
+
+##
+
+###
