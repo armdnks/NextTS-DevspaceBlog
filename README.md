@@ -1,12 +1,23 @@
 # NextTS - Devspace Blog
 
+## Course From Brad Traversy
+
+```url
+https://www.udemy.com/course/nextjs-dev-to-deployment/
+```
+
 ##
 
 ### Support Links
 
-> **How to set types for functional component props in Nextjs with TypeScript?**
->
+> How to set types for functional component props in Nextjs with TypeScript?
 > https://melvingeorge.me/blog/set-types-for-functional-components-props-typescript-nextjs
+
+> How to use GetStaticProps and GetStaticPaths with TypeScript
+> https://www.vitamindev.com/next-js/getstaticprops-getstaticpaths-typescript/
+
+> next/image
+> https://nextjs.org/docs/api-reference/next/image#domains
 
 ### Project Structure
 
@@ -399,4 +410,112 @@ slug: "react-crash-course"
 
 ##
 
-###
+### Display Posts
+
+- #### index.tsx
+
+```tsx
+const HomePage: NextPage<HomePageProps> = ({ posts }) => {
+  return (
+    <Layout>
+      <h1 className="text-5xl border-b-4 p-5 font-bold">Latest Posts</h1>
+
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post, index) => (
+          <Post key={index} post={post} />
+        ))}
+      </div>
+
+      <Link href="/blog">
+        <a className="w-full block text-center border border-gray-500 text-gray-800 rounded-md py-4 my-5 transition duration-500 ease select-none hover:text-white hover:bg-gray-900 focus:outline-none focus:shadow-outline">
+          All Posts
+        </a>
+      </Link>
+    </Layout>
+  );
+};
+```
+
+- #### Post.tsx
+
+```tsx
+import { NextPage } from "next";
+import Link from "next/link";
+import Image from "next/image";
+import { IPost } from "../interfaces/IPost";
+
+interface PostProps {
+  post: IPost;
+}
+
+const Post: NextPage<PostProps> = ({ post: { frontmatter, slug } }) => {
+  return (
+    <div className="w-full px-5 py-5 bg-white rounded-lg shadow-md mt-6">
+      <Image
+        src={frontmatter.cover_image}
+        alt={frontmatter.title}
+        width="100%"
+        height={50}
+        layout="responsive"
+        objectFit="cover"
+        className="rounded"
+      />
+
+      <div className="flex justify-between items-center mt-4">
+        <span className="font-light text-gray-600">{frontmatter.date}</span>
+        <div>{frontmatter.category}</div>
+      </div>
+
+      <div className="mt-2">
+        <Link href={`/blog/${slug}`}>
+          <a className="text-2xl text-gray-700 font-bold hover:underline">
+            {frontmatter.title}
+          </a>
+        </Link>
+        <p className="mt-2 text-gray-600">{frontmatter.excerpt}</p>
+      </div>
+
+      <div className="flex justify-between items-center mt-6">
+        <Link href={`/blog/${slug}`}>
+          <a className="text-gray-900 hover:text-blue-600">Read More</a>
+        </Link>
+        <div className="flex items-center">
+          <Image
+            src={frontmatter.author_image}
+            alt={frontmatter.author_image}
+            width="40%"
+            height="40%"
+            className="rounded-full hidden sm:block"
+          />
+          <h3 className="ml-4 text-gray-700 font-bold">{frontmatter.author}</h3>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Post;
+```
+
+- #### helper.tsx
+
+```tsx
+export function sortByDate(a: any, b: any): number {
+  const oldPost = new Date(a.frontmatter.date);
+  const newPost = new Date(b.frontmatter.date);
+  const result = (+newPost - +oldPost)!;
+  return result;
+}
+```
+
+- implement on getStaticProps in index.tsx
+
+```tsx
+// export const getStaticProps: GetStaticProps = async (context) => {
+//   return {
+//     props: {
+      posts: posts.sort(sortByDate).slice(0, 6),
+//     },
+//   };
+// };
+```

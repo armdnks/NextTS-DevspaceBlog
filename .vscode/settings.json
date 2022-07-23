@@ -1,0 +1,20 @@
+{
+  "editor.wordWrap": "off",
+  "editor.wordWrapColumn": 999,
+  "editor.lineHeight": 30,
+  "editor.fontSize": 15,
+  "html.format.wrapLineLength": 999,
+  "liveServer.settings.CustomBrowser": "chrome",
+  "liveServer.settings.port": 5500,
+  "prettier.printWidth": 80,
+  "terminal.integrated.fontSize": 13,
+  "git.decorations.enabled": true,
+
+  "[markdown]": {
+    "editor.wordWrap": "off"
+  },
+
+  "[json]": {
+    "editor.wordWrap": "on"
+  }
+}
