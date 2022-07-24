@@ -2,31 +2,31 @@
 
 ## Course From Brad Traversy
 
-```url
-https://www.udemy.com/course/nextjs-dev-to-deployment/
-```
+> https://www.udemy.com/course/nextjs-dev-to-deployment/
 
 ## Showcase
 
-```url
-https://next-ts-devspace-blog-lou49zkvw-armdnks.vercel.app/
-```
+> https://next-ts-devspace-blog.vercel.app/
 
 ---
 
 ### Support Links
 
-> How to set types for functional component props in Nextjs with TypeScript?:
+How to set types for functional component props in Nextjs with TypeScript?:
+
 > https://melvingeorge.me/blog/set-types-for-functional-components-props-typescript-nextjs
 
-> How to use GetStaticProps and GetStaticPaths with TypeScript:
+How to use GetStaticProps and GetStaticPaths with TypeScript:
+
 > https://www.vitamindev.com/next-js/getstaticprops-getstaticpaths-typescript/
 
-> next/image:
+next/image:
+
 > https://nextjs.org/docs/api-reference/next/image#domains
 
-> TS2322: Type '{ text: string; }' is not assignable to type 'string'
-> getStaticProps not working well with TypeScript #16522:
+TS2322: Type '{ text: string; }' is not assignable to type 'string'
+getStaticProps not working well with TypeScript #16522:
+
 > https://github.com/vercel/next.js/discussions/16522
 
 ### Project Structure
