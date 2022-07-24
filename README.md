@@ -28,15 +28,26 @@ https://www.udemy.com/course/nextjs-dev-to-deployment/
 ```sh
 .
 ├── components
-│   ├── Header
-│   └── Layout
+│   └── index.tsx
+│
 ├── pages
+│   ├── api
+│   │   └── search.ts
+│   │
+│   ├── blog
+│   │   ├── category
+│   │   ├── page
+│   │   ├── [slug].tsx
+│   │   └── index.tsx
+│   │
 │   ├── _app.tsx
 │   ├── 404.tsx
 │   ├── about.tsx
 │   └── index.tsx
+│
 ├── posts
 │   └── all markdown files
+│
 ├── public
 └── styles
 ```
@@ -828,7 +839,9 @@ const PostPage: NextPage<PostPageProps> = ({
 };
 ```
 
-##
+---
+
+## Pagination & Category Pages
 
 ### Start Pagination - Generate Paths
 
@@ -1450,7 +1463,9 @@ const BlogPage: NextPage<BlogPageProps> = ({..., categories,}) => {
 };
 ```
 
-##
+---
+
+## Search & Caching Posts
 
 ### Search Component
 
@@ -1694,4 +1709,102 @@ const Post: NextPage<PostProps> = ({
     </div>
   );
 };
+```
+
+##
+
+### Cache Posts
+
+- #### scripts/cache.js
+
+```js
+const fs = require("fs");
+const path = require("path");
+const matter = require("gray-matter");
+
+function postData() {
+  const files = fs.readdirSync(path.join("posts"));
+  const posts = files.map((filename) => {
+    const slug = filename.replace(".md", "");
+    const markdownWithMeta = fs.readFileSync(
+      path.join("posts", filename),
+      "utf-8"
+    );
+    const { data: frontmatter } = matter(markdownWithMeta);
+    return {
+      slug,
+      frontmatter,
+    };
+  });
+
+  return `export const posts = ${JSON.stringify(posts)}`;
+}
+
+try {
+  fs.readdirSync("cache");
+} catch (error) {
+  fs.mkdirSync("cache");
+}
+
+fs.writeFile("cache/data.js", postData(), function (err) {
+  if (err) return console.log(err);
+  console.log("Posts Cached...");
+});
+```
+
+- #### api/search.ts
+
+```tsx
+if (process.env.NODE_ENV === "production") {
+  // Fetch from cache
+  posts = require("../../cache/data").posts;
+}
+```
+
+- #### package.json
+
+```json
+  "scripts": {
+    .
+    .
+    "cache-posts": "node scripts/cache.js",
+  },
+```
+
+##
+
+### Pre-Commit Hook With Husky
+
+```sh
+https://github.com/typicode/husky
+npm i -D husky
+```
+
+- #### package.json
+
+```json
+  "scripts": {
+    .
+    .
+    // "cache-posts": "node scripts/cache.js",
+    "prepare": "husky install"
+  },
+```
+
+- create husky folder
+
+```sh
+npm run prepare
+```
+
+```sh
+npx husky add .husky/pre-commit "npm run cache-posts && git add cache/data.js"
+```
+
+- #### Delete cache folder before git add . & commit
+
+```
+git add .
+git commit -m "__my_commit__"
+git push
 ```

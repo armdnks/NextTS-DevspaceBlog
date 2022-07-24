@@ -18,6 +18,7 @@
 # misc
 .DS_Store
 *.pem
+.husky
 
 # debug
 npm-debug.log*
@@ -34,4 +35,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-.husky
