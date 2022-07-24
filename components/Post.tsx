@@ -2,6 +2,7 @@ import { NextPage } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { IPost } from "../interfaces/IPost";
+import CategoryLabel from "./CategoryLabel";
 
 interface PostProps {
   post: IPost;
@@ -22,7 +23,7 @@ const Post: NextPage<PostProps> = ({ post: { frontmatter, slug } }) => {
 
       <div className="flex justify-between items-center mt-4">
         <span className="font-light text-gray-600">{frontmatter.date}</span>
-        <div>{frontmatter.category}</div>
+        <CategoryLabel>{frontmatter.category}</CategoryLabel>
       </div>
 
       <div className="mt-2">

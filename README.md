@@ -10,14 +10,18 @@ https://www.udemy.com/course/nextjs-dev-to-deployment/
 
 ### Support Links
 
-> How to set types for functional component props in Nextjs with TypeScript?
+> How to set types for functional component props in Nextjs with TypeScript?:
 > https://melvingeorge.me/blog/set-types-for-functional-components-props-typescript-nextjs
 
-> How to use GetStaticProps and GetStaticPaths with TypeScript
+> How to use GetStaticProps and GetStaticPaths with TypeScript:
 > https://www.vitamindev.com/next-js/getstaticprops-getstaticpaths-typescript/
 
-> next/image
+> next/image:
 > https://nextjs.org/docs/api-reference/next/image#domains
+
+> TS2322: Type '{ text: string; }' is not assignable to type 'string'
+> getStaticProps not working well with TypeScript #16522:
+> https://github.com/vercel/next.js/discussions/16522
 
 ### Project Structure
 
@@ -518,4 +522,308 @@ export function sortByDate(a: any, b: any): number {
 //     },
 //   };
 // };
+```
+
+##
+
+### Category Label Component
+
+- #### CategoryLabel.tsx
+
+```tsx
+import { NextPage } from "next";
+import Link from "next/link";
+import React from "react";
+
+interface CategoryLabelProps {
+  children: string;
+}
+
+const CategoryLabel: NextPage<CategoryLabelProps> = ({ children }) => {
+  const colorKey: { [key: string]: string } = {
+    JavaScript: "yellow",
+    CSS: "blue",
+    Python: "green",
+    PHP: "purple",
+    Ruby: "red",
+  };
+
+  return (
+    <div
+      className={`px-2 py-1 bg-${colorKey[children]}-600 text-gray-100 font-bold rounded`}
+    >
+      <Link href={`/blog/category/${children.toLowerCase()}`}>{children}</Link>
+    </div>
+  );
+};
+
+export default CategoryLabel;
+```
+
+- #### Post.tsx
+
+```tsx
+// <div className="flex justify-between items-center mt-4">
+//   <span className="font-light text-gray-600">{frontmatter.date}</span>
+<CategoryLabel>{frontmatter.category}</CategoryLabel>
+// </div>
+```
+
+##
+
+### Create Blog Page
+
+- blog/index.tsx
+- #### index.tsx
+
+```tsx
+import { NextPage, GetStaticProps } from "next";
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { Layout, Post } from "../../components";
+import { IPost } from "../../interfaces/IPost";
+import { sortByDate } from "../../utils/helper";
+
+interface BlogPageProps {
+  posts: IPost[];
+}
+
+const BlogPage: NextPage<BlogPageProps> = ({ posts }) => {
+  return (
+    <Layout>
+      <h1 className="text-5xl border-b-4 p-5 font-bold">Blog</h1>
+
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post, index) => (
+          <Post key={index} post={post} />
+        ))}
+      </div>
+    </Layout>
+  );
+};
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const files = fs.readdirSync(path.join("posts"));
+  const posts = files.map((filename) => {
+    const slug = filename.replace(".md", "");
+    const markdownWithMeta = fs.readFileSync(
+      path.join("posts", filename),
+      "utf-8"
+    );
+    const { data: frontmatter } = matter(markdownWithMeta);
+    return { slug, frontmatter };
+  });
+
+  return {
+    props: {
+      posts: posts.sort(sortByDate),
+    },
+  };
+};
+
+export default BlogPage;
+```
+
+##
+
+### Generate Static Paths & Single Post Data
+
+- #### [slug].tsx
+
+```tsx
+import { NextPage, GetStaticPaths, GetStaticProps } from "next";
+import fs from "fs";
+import path from "path";
+
+const PostPage: NextPage = () => {
+  return <div>PostPage</div>;
+};
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const files = fs.readdirSync(path.join("posts"));
+
+  const paths = files.map((filename) => ({
+    params: {
+      slug: filename.replace(".md", ""),
+    },
+  }));
+  console.log(paths);
+
+  return {
+    paths,
+    fallback: false,
+  };
+};
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  return { props: {} };
+};
+
+export default PostPage;
+```
+
+```sh
+[
+  { params: { slug: 'django-crash-course' } },
+  { params: { slug: 'javascript-performance-tips' } },
+  { params: { slug: 'manage-react-state-with-xstate' } },
+  { params: { slug: 'new-in-php-8' } },
+  { params: { slug: 'python-book-review' } },
+  { params: { slug: 'react-crash-course' } },
+  { params: { slug: 'tailwind-vs-bootstrap' } },
+  { params: { slug: 'writing-great-unit-tests' } }
+]
+```
+
+- #### getStaticPaths & getStaticProps
+
+```tsx
+export const getStaticPaths: GetStaticPaths = async () => {
+  const files = fs.readdirSync(path.join("posts"));
+  const paths = files.map((filename) => ({
+    params: {
+      slug: filename.replace(".md", ""),
+    },
+  }));
+  return {
+    paths,
+    fallback: false,
+  };
+};
+
+interface Params extends ParsedUrlQuery {
+  slug: string;
+}
+export const getStaticProps: GetStaticProps = async (context) => {
+  const { slug } = context.params as Params;
+  const markdownWithMeta = fs.readFileSync(
+    path.join("posts", slug + ".md"),
+    "utf-8"
+  );
+  const { data: frontmatter, content } = matter(markdownWithMeta);
+  return {
+    props: {
+      frontmatter,
+      content,
+      slug,
+    },
+  };
+};
+```
+
+- #### Complete Code
+
+```tsx
+import { NextPage, GetStaticPaths, GetStaticProps } from "next";
+import { ParsedUrlQuery } from "querystring";
+
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { IFrontMatter } from "../../interfaces/IPost";
+
+interface PostPageProps {
+  frontmatter: IFrontMatter;
+  content: string;
+  slug: string;
+}
+
+const PostPage: NextPage<PostPageProps> = ({
+  frontmatter: { title, category, date, cover_image, author, author_image },
+  content,
+  slug,
+}) => {
+  return <div>{title}</div>;
+};
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const files = fs.readdirSync(path.join("posts"));
+  const paths = files.map((filename) => ({
+    params: {
+      slug: filename.replace(".md", ""),
+    },
+  }));
+  return {
+    paths,
+    fallback: false,
+  };
+};
+
+interface Params extends ParsedUrlQuery {
+  slug: string;
+}
+export const getStaticProps: GetStaticProps = async (context) => {
+  const { slug } = context.params as Params;
+  const markdownWithMeta = fs.readFileSync(
+    path.join("posts", slug + ".md"),
+    "utf-8"
+  );
+  const { data: frontmatter, content } = matter(markdownWithMeta);
+  return {
+    props: {
+      frontmatter,
+      content,
+      slug,
+    },
+  };
+};
+
+export default PostPage;
+```
+
+##
+
+### Display Single Blog Post
+
+- #### [slug].tsx
+
+```tsx
+import { marked } from "marked";
+
+const PostPage: NextPage<PostPageProps> = ({
+  frontmatter: { title, category, date, cover_image, author, author_image },
+  content,
+  slug,
+}) => {
+  return (
+    <Layout title={title}>
+      <Link href="/blog">Go Back</Link>
+      <div className="w-full px-10 py-6 bg-white rounded-lg shadow-md mt-6">
+        <div className="flex justify-between items-center mt-4">
+          <h1 className="text-5xl mb-7">{title}</h1>
+          <CategoryLabel>{category}</CategoryLabel>
+        </div>
+        <Image
+          src={cover_image}
+          alt=""
+          className="w-full rounded"
+          width="100%"
+          height="30%"
+          layout="responsive"
+          objectFit="cover"
+        />
+
+        <div className="flex justify-between items-center bg-gray-100 p-2 my-8">
+          <div className="flex items-center">
+            <Image
+              src={author_image}
+              alt=""
+              className="rounded-full hidden sm:block"
+              width="45%"
+              height="45%"
+              objectFit="cover"
+            />
+            <h4 className="mx-4">{author}</h4>
+          </div>
+          <div className="mr-4">{date}</div>
+        </div>
+
+        <div className="blog-text mt-2">
+          <div dangerouslySetInnerHTML={{ __html: marked(content) }}></div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
 ```
