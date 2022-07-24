@@ -1,4 +1,4 @@
-import { NextPage, GetStaticProps } from "next";
+import type { NextPage, GetStaticProps } from "next";
 import Link from "next/link";
 import { Layout, Post } from "@/components/index";
 import { IPost } from "@/interfaces/IPost";

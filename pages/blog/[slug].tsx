@@ -24,7 +24,11 @@ const PostPage: NextPage<PostPageProps> = ({
 }) => {
   return (
     <Layout title={title}>
-      <Link href="/blog">Go Back</Link>
+      <Link href="/blog">
+        <a className="bg-gray-900 px-4 py-3 text-white rounded hover:opacity-90">
+          Go Back
+        </a>
+      </Link>
       <div className="w-full px-10 py-6 bg-white rounded-lg shadow-md mt-6">
         <div className="flex justify-between items-center mt-4">
           <h1 className="text-5xl mb-7">{title}</h1>

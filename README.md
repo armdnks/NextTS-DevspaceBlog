@@ -6,7 +6,13 @@
 https://www.udemy.com/course/nextjs-dev-to-deployment/
 ```
 
-##
+## Showcase
+
+```url
+https://next-ts-devspace-blog-lou49zkvw-armdnks.vercel.app/
+```
+
+---
 
 ### Support Links
 
@@ -81,7 +87,7 @@ export default HomePage;
 - #### Layout.tsx
 
 ```tsx
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Head from "next/head";
 
 interface LayoutProps {
@@ -144,7 +150,7 @@ export default HomePage;
 - #### Header.tsx
 
 ```tsx
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -454,7 +460,7 @@ const HomePage: NextPage<HomePageProps> = ({ posts }) => {
 - #### Post.tsx
 
 ```tsx
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { IPost } from "../interfaces/IPost";
@@ -542,7 +548,7 @@ export function sortByDate(a: any, b: any): number {
 - #### CategoryLabel.tsx
 
 ```tsx
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Link from "next/link";
 import React from "react";
 
@@ -1025,7 +1031,7 @@ const BlogPage: NextPage<BlogPageProps> = ({
 - #### Pagination.tsx
 
 ```tsx
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Link from "next/link";
 
 interface PaginationProps {
@@ -1415,7 +1421,7 @@ return {
 - #### CategoryList.tsx
 
 ```tsx
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Link from "next/link";
 
 interface CategoryList {
@@ -1473,7 +1479,7 @@ const BlogPage: NextPage<BlogPageProps> = ({..., categories,}) => {
 
 ```tsx
 import { useState, useEffect } from "react";
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import { FaSearch } from "react-icons/fa";
 
 const Search: NextPage = () => {

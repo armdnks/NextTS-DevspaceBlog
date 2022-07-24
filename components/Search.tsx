@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import { FaSearch } from "react-icons/fa";
 import SearchResults from "./SearchResults";
 

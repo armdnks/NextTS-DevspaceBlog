@@ -1,4 +1,4 @@
-import { NextPage, GetStaticProps, GetStaticPaths } from "next";
+import type { NextPage, GetStaticProps, GetStaticPaths } from "next";
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
@@ -21,21 +21,21 @@ const CategoryBlogPage: NextPage<CategoryBlogPageProps> = ({
 }) => {
   return (
     <Layout>
-      <div className="flex justify-between">
-        <div className="w-3/4 mr-10">
+      <div className="flex justify-between flex-col gap-5 md:flex-row-reverse">
+        <div className="mb-4 md:mb-0 md:w-1/3 lg:w-1/4">
+          <CategoryList categories={categories} />
+        </div>
+
+        <div className="md:w-2/3 lg:w-3/4">
           <h1 className="text-5xl border-b-4 p-5 font-bold">
             {posts.length === 1 ? "Post in " : "Posts in "} {categoryName}
           </h1>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
             {posts.map((post, index) => (
               <Post key={index} post={post} />
             ))}
           </div>
-        </div>
-
-        <div className="w-1/4">
-          <CategoryList categories={categories} />
         </div>
       </div>
     </Layout>

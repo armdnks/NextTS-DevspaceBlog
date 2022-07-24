@@ -1,4 +1,4 @@
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Head from "next/head";
 import React from "react";
 
@@ -30,7 +30,7 @@ const Layout: NextPage<LayoutProps> = ({
       <Header />
       <Search />
 
-      <main className="container mx-auto my-7">{children}</main>
+      <main className="container mx-auto my-7 pb-16">{children}</main>
     </div>
   );
 };

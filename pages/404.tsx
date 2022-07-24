@@ -1,8 +1,19 @@
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 import Image from "next/image";
 
 import { Layout } from "@/components/index";
 
 const NotFoundPage = () => {
+  const router = useRouter();
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      router.replace("/");
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [router]);
+
   return (
     <Layout title="Page Not Found">
       <div className="flex flex-col items-center mt-20">
