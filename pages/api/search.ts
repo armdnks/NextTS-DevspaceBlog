@@ -4,10 +4,11 @@ import path from "path";
 import matter from "gray-matter";
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  let posts;
+  let posts: any[];
 
   if (process.env.NODE_ENV === "production") {
-    // @todo - fetch from cache
+    // Fetch from cache
+    posts = require("../../cache/data").posts;
   } else {
     const files = fs.readdirSync(path.join("posts"));
     posts = files.map((filename) => {
@@ -24,7 +25,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const results = posts?.filter(
+  const results = posts.filter(
     ({ frontmatter: { title, excerpt, category } }) =>
       title.toLowerCase().indexOf(req.query.q) != -1 ||
       excerpt.toLowerCase().indexOf(req.query.q) != -1 ||
