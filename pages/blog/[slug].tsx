@@ -8,8 +8,8 @@ import path from "path";
 import matter from "gray-matter";
 import { marked } from "marked";
 
-import { Layout, CategoryLabel } from "../../components";
-import { IFrontMatter } from "../../interfaces/IPost";
+import { Layout, CategoryLabel } from "@/components/index";
+import { IFrontMatter } from "@/interfaces/IPost";
 
 interface PostPageProps {
   frontmatter: IFrontMatter;
@@ -35,7 +35,7 @@ const PostPage: NextPage<PostPageProps> = ({
           alt=""
           className="w-full rounded"
           width="100%"
-          height="30%"
+          height="50%"
           layout="responsive"
           objectFit="cover"
         />

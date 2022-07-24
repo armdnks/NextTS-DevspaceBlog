@@ -1,11 +1,8 @@
 import { NextPage, GetStaticProps } from "next";
 import Link from "next/link";
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
-import { Layout, Post } from "../components";
-import { IPost } from "../interfaces/IPost";
-import { sortByDate } from "../utils/helper";
+import { Layout, Post } from "@/components/index";
+import { IPost } from "@/interfaces/IPost";
+import { getPosts } from "@/lib/posts";
 
 interface HomePageProps {
   posts: IPost[];
@@ -31,21 +28,10 @@ const HomePage: NextPage<HomePageProps> = ({ posts }) => {
   );
 };
 
-export const getStaticProps: GetStaticProps = async (context) => {
-  const files = fs.readdirSync(path.join("posts"));
-  const posts = files.map((filename) => {
-    const slug = filename.replace(".md", "");
-    const markdownWithMeta = fs.readFileSync(
-      path.join("posts", filename),
-      "utf-8"
-    );
-    const { data: frontmatter } = matter(markdownWithMeta);
-    return { slug, frontmatter };
-  });
-
+export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {
-      posts: posts.sort(sortByDate).slice(0, 6),
+      posts: getPosts().slice(0, 6),
     },
   };
 };

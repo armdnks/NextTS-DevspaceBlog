@@ -827,3 +827,871 @@ const PostPage: NextPage<PostPageProps> = ({
   );
 };
 ```
+
+##
+
+### Start Pagination - Generate Paths
+
+- blog/page/[page_index].tsx
+- #### [page_index].tsx
+
+```tsx
+import { NextPage, GetStaticProps } from "next";
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { Layout, Post } from "../../../components";
+import { IPost } from "../../../interfaces/IPost";
+import { sortByDate } from "../../../utils/helper";
+
+interface BlogPageProps {
+  posts: IPost[];
+}
+
+const BlogPage: NextPage<BlogPageProps> = ({ posts }) => {
+  return (
+    <Layout>
+      <h1 className="text-5xl border-b-4 p-5 font-bold">Blog</h1>
+
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post, index) => (
+          <Post key={index} post={post} />
+        ))}
+      </div>
+    </Layout>
+  );
+};
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const files = fs.readdirSync(path.join("posts"));
+  const posts = files.map((filename) => {
+    const slug = filename.replace(".md", "");
+    const markdownWithMeta = fs.readFileSync(
+      path.join("posts", filename),
+      "utf-8"
+    );
+    const { data: frontmatter } = matter(markdownWithMeta);
+    return { slug, frontmatter };
+  });
+
+  return {
+    props: {
+      posts: posts.sort(sortByDate),
+    },
+  };
+};
+
+export default BlogPage;
+```
+
+- #### index.tsx
+
+```tsx
+import { getStaticProps } from "./page/[page_index]";
+import BlogPage from "./page/[page_index]";
+
+export { getStaticProps };
+export default BlogPage;
+```
+
+- #### config/index.tsx
+
+```tsx
+export const POST_PER_PAGE = 3;
+```
+
+- #### [page_index].tsx
+
+```tsx
+import { GetStaticPaths } from "next";
+import { POST_PER_PAGE } from "../../../config";
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const files = fs.readdirSync(path.join("posts"));
+  const numPages = Math.ceil(files.length / POST_PER_PAGE);
+
+  let paths = [];
+  for (let i = 1; i <= numPages; i++) {
+    paths.push({
+      params: { page_index: i.toString() },
+    });
+  }
+
+  console.log(paths);
+  return {
+    paths,
+    fallback: false,
+  };
+};
+```
+
+```sh
+[
+  { params: { page_index: '1' } },
+  { params: { page_index: '2' } },
+  { params: { page_index: '3' } }
+]
+```
+
+- page 1 = 3 posts, page 2 = 3 posts, page 3 = 2 posts,
+- total 8 posts
+
+##
+
+### Fetch Paginated Posts
+
+- #### [page_index].tsx
+
+```tsx
+interface Context {
+  params: {
+    page_index: string;
+  };
+}
+export const getStaticProps: GetStaticProps = async (context) => {
+  const { params } = context as Context;
+  const page = parseInt(params && params.page_index) || 1;
+
+  const files = fs.readdirSync(path.join("posts"));
+  const posts = files.map((filename) => {
+    const slug = filename.replace(".md", "");
+    const markdownWithMeta = fs.readFileSync(
+      path.join("posts", filename),
+      "utf-8"
+    );
+    const { data: frontmatter } = matter(markdownWithMeta);
+    return { slug, frontmatter };
+  });
+
+  const numPages = Math.ceil(files.length / POSTS_PER_PAGE);
+  const pageIndex = page - 1;
+  const orderedPosts = posts
+    .sort(sortByDate)
+    .slice(pageIndex * POSTS_PER_PAGE, (pageIndex + 1) * POSTS_PER_PAGE);
+
+  return {
+    props: {
+      posts: orderedPosts,
+      numPages,
+      currentPage: page,
+    },
+  };
+};
+```
+
+```tsx
+interface BlogPageProps {
+  posts: IPost[];
+  numPages: number;
+  currentPage: number;
+}
+
+const BlogPage: NextPage<BlogPageProps> = ({
+  posts,
+  numPages,
+  currentPage,
+}) => {
+  return (
+    <Layout>
+      <h1 className="text-5xl border-b-4 p-5 font-bold">Blog</h1>
+
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post, index) => (
+          <Post key={index} post={post} />
+        ))}
+      </div>
+    </Layout>
+  );
+};
+```
+
+##
+
+### Pagination Links Component
+
+- #### Pagination.tsx
+
+```tsx
+import { NextPage } from "next";
+import Link from "next/link";
+
+interface PaginationProps {
+  numPages: number;
+  currentPage: number;
+}
+
+const Pagination: NextPage<PaginationProps> = ({ numPages, currentPage }) => {
+  const isFirst = currentPage === 1;
+  const isLast = currentPage === numPages;
+  const prevPage = `/blog/page/${currentPage - 1}`;
+  const nextPage = `/blog/page/${currentPage + 1}`;
+
+  if (numPages === 1) return <></>;
+
+  return (
+    <div className="mt-6">
+      <ul className="flex pl-0 list-none my-2">
+        {!isFirst && (
+          <Link href={prevPage}>
+            <li className="relative block py-2 px-3 leading-tight bg-white border border-gray-300 text-gray-800 mr-1 hover:bg-gray-200 cursor-pointer">
+              Previous
+            </li>
+          </Link>
+        )}
+        {Array.from({ length: numPages }, (_, i) => (
+          <Link href={`/blog/page/${i + 1}`} key={`page-${i}`}>
+            <li className="relative block py-2 px-3 leading-tight bg-white border border-gray-300 text-gray-800 mr-1 hover:bg-gray-200 cursor-pointer">
+              {i + 1}
+            </li>
+          </Link>
+        ))}
+
+        {!isLast && (
+          <Link href={nextPage}>
+            <li className="relative block py-2 px-3 leading-tight bg-white border border-gray-300 text-gray-800 mr-1 hover:bg-gray-200 cursor-pointer">
+              Next
+            </li>
+          </Link>
+        )}
+      </ul>
+    </div>
+  );
+};
+
+export default Pagination;
+```
+
+- #### [page_index].tsx
+
+```tsx
+import { Pagination } from "../../../components";
+
+// <Layout>
+.
+.
+  <Pagination currentPage={currentPage} numPages={numPages} />
+// </Layout>;
+```
+
+##
+
+### Category Pages
+
+- blog/category/[category_name].tsx
+- #### [category_name].tsx
+- copy and paste from HomePage (index.tsx)
+
+```tsx
+import { NextPage, GetStaticProps } from "next";
+import Link from "next/link";
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { Layout, Post } from "@/components/index";
+import { IPost } from "@/interfaces/IPost";
+import { sortByDate } from "@/utils/helper";
+
+interface CategoryBlogPageProps {
+  posts: IPost[];
+}
+
+const CategoryBlogPage: NextPage<CategoryBlogPageProps> = ({ posts }) => {
+  return (
+    <Layout>
+      <h1 className="text-5xl border-b-4 p-5 font-bold">Latest Posts</h1>
+
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post, index) => (
+          <Post key={index} post={post} />
+        ))}
+      </div>
+
+      <Link href="/blog">
+        <a className="w-full block text-center border border-gray-500 text-gray-800 rounded-md py-4 my-5 transition duration-500 ease select-none hover:text-white hover:bg-gray-900 focus:outline-none focus:shadow-outline">
+          All Posts
+        </a>
+      </Link>
+    </Layout>
+  );
+};
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const files = fs.readdirSync(path.join("posts"));
+  const posts = files.map((filename) => {
+    const slug = filename.replace(".md", "");
+    const markdownWithMeta = fs.readFileSync(
+      path.join("posts", filename),
+      "utf-8"
+    );
+    const { data: frontmatter } = matter(markdownWithMeta);
+    return { slug, frontmatter };
+  });
+
+  return {
+    props: {
+      posts: posts.sort(sortByDate),
+    },
+  };
+};
+
+export default CategoryBlogPage;
+```
+
+- #### getStaticPaths
+
+```tsx
+import { GetStaticPaths } from "next";
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const files = fs.readdirSync(path.join("posts"));
+  const categories = files.map((filename) => {
+    const markdownWithMeta = fs.readFileSync(
+      path.join("posts", filename),
+      "utf-8"
+    );
+
+    const { data: frontmatter } = matter(markdownWithMeta);
+    return frontmatter.category.toLowerCase();
+  });
+
+  console.log(categories);
+
+  return {
+    paths: [],
+    fallback: false,
+  };
+};
+```
+
+```sh
+[
+  'python',
+  'javascript',
+  'javascript',
+  'php',
+  'python',
+  'javascript',
+  'css',
+  'javascript'
+]
+```
+
+- continue to create paths from categories
+
+```tsx
+const paths = categories.map((category) => ({
+  params: { category_name: category },
+}));
+
+return {
+  paths,
+  fallback: false,
+};
+```
+
+- #### getStaticProps
+
+```tsx
+import { ParsedUrlQuery } from "querystring";
+
+interface Params extends ParsedUrlQuery {
+  category_name: string;
+}
+export const getStaticProps: GetStaticProps = async (context) => {
+  const { category_name } = context.params as Params;
+  console.log(category_name);
+  .
+  .
+};
+```
+
+- refresh the page and pick one category
+- console
+
+```sh
+javascript
+```
+
+- continue getStaticProps
+
+```tsx
+export const getStaticProps: GetStaticProps = async (context) => {
+  const { category_name: categoryName } = context.params as Params;
+  .
+  .
+  .
+  // Filter posts by category
+  const categoryPosts = posts.filter(
+    (post) => post.frontmatter.category.toLowerCase() === categoryName
+  );
+
+  return {
+    props: {
+      posts: categoryPosts.sort(sortByDate),
+      categoryName,
+    },
+  };
+};
+```
+
+- #### CategoryBlogPage
+- display category name
+
+```tsx
+const CategoryBlogPage: NextPage<CategoryBlogPageProps> = ({
+  posts,
+  categoryName,
+}) => {
+  return (
+    <Layout>
+      <h1 className="text-5xl border-b-4 p-5 font-bold">
+        {posts.length === 1 ? "Post in " : "Posts in "} {categoryName}
+      </h1>
+      .
+    </Layout>
+  );
+};
+```
+
+##
+
+### Refactor getStaticProps to getPosts function
+
+- #### lib/posts.ts
+
+```tsx
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { sortByDate } from "@/utils/helper";
+
+const files = fs.readdirSync(path.join("posts"));
+
+export function getPosts() {
+  const posts = files.map((filename) => {
+    const slug = filename.replace(".md", "");
+    const markdownWithMeta = fs.readFileSync(
+      path.join("posts", filename),
+      "utf-8"
+    );
+    const { data: frontmatter } = matter(markdownWithMeta);
+
+    return {
+      slug,
+      frontmatter,
+    };
+  });
+
+  return posts.sort(sortByDate);
+}
+```
+
+- #### HomePage index.tsx
+
+```tsx
+import { getPosts } from "@/lib/posts";
+
+export const getStaticProps: GetStaticProps = async () => {
+  return {
+    props: {
+      posts: getPosts().slice(0, 6),
+    },
+  };
+};
+```
+
+- #### blog/page/[page_index].tsx
+
+```tsx
+import { getPosts } from "@/lib/posts";
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const { params } = context as Context;
+  const page = parseInt(params && params.page_index) || 1;
+
+  const files = fs.readdirSync(path.join("posts"));
+  const posts = getPosts();
+
+  const numPages = Math.ceil(files.length / POSTS_PER_PAGE);
+  const pageIndex = page - 1;
+  const orderedPosts = posts.slice(
+    pageIndex * POSTS_PER_PAGE,
+    (pageIndex + 1) * POSTS_PER_PAGE
+  );
+
+  return {
+    props: {
+      posts: orderedPosts,
+      numPages,
+      currentPage: page,
+    },
+  };
+};
+```
+
+- #### blog/category/[category_name].tsx
+
+```tsx
+import { getPosts } from "@/lib/posts";
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const { category_name: categoryName } = context.params as Params;
+
+  const files = fs.readdirSync(path.join("posts"));
+  const posts = getPosts();
+
+  // Filter posts by category
+  const categoryPosts = posts.filter(
+    (post) => post.frontmatter.category.toLowerCase() === categoryName
+  );
+
+  return {
+    props: {
+      posts: categoryPosts,
+      categoryName,
+    },
+  };
+};
+```
+
+##
+
+### Category Sidebar
+
+- #### [page_index].tsx
+- getStaticProps
+
+```tsx
+// Get categories for sidebar
+const categories = posts.map((post) => post.frontmatter.category);
+console.log(categories);
+
+// const numPages = Math.ceil(files.length / POSTS_PER_PAGE);
+```
+
+```sh
+[
+  'JavaScript',
+  'JavaScript',
+  'JavaScript',
+  'PHP',
+  'Python',
+  'Python',
+  'CSS',
+  'JavaScript'
+]
+```
+
+- continue getStaticProps
+
+```tsx
+// Get categories for sidebar
+const categories: string[] = posts.map((post) => post.frontmatter.category);
+const uniqueCategories = [...new Set(categories)];
+
+return {
+  props: {
+    posts: orderedPosts,
+    numPages,
+    currentPage: page,
+    categories: uniqueCategories,
+  },
+};
+```
+
+- #### CategoryList.tsx
+
+```tsx
+import { NextPage } from "next";
+import Link from "next/link";
+
+interface CategoryList {
+  categories: string[];
+}
+
+const CategoryList: NextPage<CategoryList> = ({ categories }) => {
+  return (
+    <div className="w-full p-5 bg-white rounded-lg shadow-md mt-6">
+      <h3 className="text-2xl bg-gray-800 text-white p-3 rounded">
+        Blog Categories
+      </h3>
+      <ul className="divide-y divide-gray-300">
+        {categories.map((category, index) => (
+          <Link key={index} href={`/blog/category/${category.toLowerCase()}`}>
+            <li className="p-4 cursor-pointer hover:bg-gray-50">{category}</li>
+          </Link>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default CategoryList;
+```
+
+- #### [page_index].tsx & [category_name].tsx
+
+```tsx
+import { CategoryList } from "@/components/index";
+
+const BlogPage: NextPage<BlogPageProps> = ({..., categories,}) => {
+  return (
+    <Layout>
+      <div className="flex justify-between flex-col md:flex-row">
+          .
+          .
+          .
+        <div className="w-1/4">
+          <CategoryList categories={categories} />
+        </div>
+      </div>
+    </Layout>
+  );
+};
+```
+
+##
+
+### Search Component
+
+- #### Search.tsx
+
+```tsx
+import { useState, useEffect } from "react";
+import { NextPage } from "next";
+import { FaSearch } from "react-icons/fa";
+
+const Search: NextPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+
+  return (
+    <div className="relative bg-gray-600 p-4">
+      <div className="container mx-auto flex items-center justify-center md:justify-end">
+        <div className="relative text-gray-600 w-72">
+          <form>
+            <input
+              type="search"
+              name="search"
+              id="search"
+              className="bg-white h-10 px-5 pr-10 rounded-full text-sm focus:outline-none w-72"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search Posts..."
+            />
+
+            <FaSearch className="absolute top-0 right-0 text-black mt-3 mr-4" />
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Search;
+```
+
+- #### Layout.tsx
+- put search component below the header
+
+```tsx
+//  <Header />
+<Search />
+```
+
+##
+
+### Search API Route
+
+- #### search.tsx
+
+```tsx
+import type { NextApiRequest, NextApiResponse } from "next";
+
+type Data = {
+  name: string;
+};
+
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  res.status(200).json({ name: "John Doe" });
+}
+```
+
+- #### Complete Code
+
+```tsx
+import type { NextApiRequest, NextApiResponse } from "next";
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  let posts;
+
+  if (process.env.NODE_ENV === "production") {
+    // @todo - fetch from cache
+  } else {
+    const files = fs.readdirSync(path.join("posts"));
+    posts = files.map((filename) => {
+      const slug = filename.replace(".md", "");
+      const markdownWithMeta = fs.readFileSync(
+        path.join("posts", filename),
+        "utf-8"
+      );
+      const { data: frontmatter } = matter(markdownWithMeta);
+      return {
+        slug,
+        frontmatter,
+      };
+    });
+  }
+
+  const results = posts?.filter(
+    ({ frontmatter: { title, excerpt, category } }) =>
+      title.toLowerCase().indexOf(req.query.q) != -1 ||
+      excerpt.toLowerCase().indexOf(req.query.q) != -1 ||
+      category.toLowerCase().indexOf(req.query.q) != -1
+  );
+
+  res.status(200).json({ results });
+}
+```
+
+- #### Search.tsx
+
+```tsx
+useEffect(() => {
+  async function getResults() {
+    if (searchTerm === "") {
+      setSearchResults([]);
+    } else {
+      const res = await fetch(`/api/search?q=${searchTerm}`);
+      const { results } = await res.json();
+      console.log(results);
+      setSearchResults(results);
+    }
+  }
+  getResults();
+}, [searchTerm]);
+```
+
+- client console log
+
+```sh
+(5) [{…}, {…}, {…}, {…}, {…}]
+0: {slug: 'django-crash-course', frontmatter: {…}}
+1: {slug: 'javascript-performance-tips', frontmatter: {…}}
+2: {slug: 'manage-react-state-with-xstate', frontmatter: {…}}
+3: {slug: 'react-crash-course', frontmatter: {…}}
+4: {slug: 'writing-great-unit-tests', frontmatter: {…}}
+length: 5
+[[Prototype]]: Array(0)
+```
+
+##
+
+### Search Results Components
+
+- #### SearchResults.tsx
+
+```tsx
+import type { NextPage } from "next";
+import { IPost } from "@/interfaces/IPost";
+import Post from "./Post";
+
+interface SearchResultsProps {
+  results: IPost[];
+}
+const SearchResults: NextPage<SearchResultsProps> = ({ results }) => {
+  if (results.length === 0) return <></>;
+
+  return (
+    <div className="absolute top-20 right-0 z-10 border-4 border-gray-500 bg-white text-black w-full rounded-2xl md:right-10 md:w-6/12 ">
+      <div className="p-10">
+        <h2 className="text-3xl mb-3">{results.length} Results</h2>
+        {results.map((result, index) => (
+          <Post key={index} post={result} compact={true} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default SearchResults;
+```
+
+- #### Search.tsx
+
+```tsx
+// <div className="relative bg-gray-600 p-4">
+  .
+  .
+  <SearchResults results={searchResults} />
+// </div>
+```
+
+- #### Post.tsx
+
+```tsx
+interface PostProps {
+  post: IPost;
+  compact?: boolean;
+}
+
+const Post: NextPage<PostProps> = ({
+  post: { frontmatter, slug },
+  compact,
+}) => {
+  return (
+    <div className="w-full px-5 py-5 bg-white rounded-lg shadow-md mt-6">
+      {!compact && (
+        <Image
+          src={frontmatter.cover_image}
+          alt={frontmatter.title}
+          width="100%"
+          height={50}
+          layout="responsive"
+          objectFit="cover"
+          className="rounded"
+        />
+      )}
+      <div className="flex justify-between items-center mt-4">
+        <span className="font-light text-gray-600">{frontmatter.date}</span>
+        <CategoryLabel>{frontmatter.category}</CategoryLabel>
+      </div>
+
+      <div className="mt-2">
+        <Link href={`/blog/${slug}`}>
+          <a className="text-2xl text-gray-700 font-bold hover:underline">
+            {frontmatter.title}
+          </a>
+        </Link>
+        <p className="mt-2 text-gray-600">{frontmatter.excerpt}</p>
+      </div>
+
+      {!compact && (
+        <div className="flex justify-between items-center mt-6">
+          <Link href={`/blog/${slug}`}>
+            <a className="text-gray-900 hover:text-blue-600">Read More</a>
+          </Link>
+          <div className="flex items-center">
+            <Image
+              src={frontmatter.author_image}
+              alt={frontmatter.author_image}
+              width="40%"
+              height="40%"
+              className="rounded-full hidden sm:block"
+            />
+            <h3 className="ml-4 text-gray-700 font-bold">
+              {frontmatter.author}
+            </h3>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+```
